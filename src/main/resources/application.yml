@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: dcrs
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/dcrs
+    username: root
+    password: admin
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+api:
+  prefix: /api/v1
