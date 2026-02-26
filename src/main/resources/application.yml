@@ -21,3 +21,7 @@ server:
 
 api:
   prefix: /api/v1
+
+jwt:
+  secret: mySuperSecretKeyForJwtWhichShouldBeVeryLong
+  expiration: 3600000
