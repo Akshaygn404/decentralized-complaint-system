@@ -24,7 +24,7 @@ public class AuditLog {
     private Complaint complaint;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = true)
     private ComplaintStatus previousStatus;
 
     @Enumerated(EnumType.STRING)
