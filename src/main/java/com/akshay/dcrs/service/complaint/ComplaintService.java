@@ -1,6 +1,7 @@
 package com.akshay.dcrs.service.complaint;
 
 import com.akshay.dcrs.dto.request.complaint.ComplaintCreateRequest;
+import com.akshay.dcrs.dto.request.complaint.ComplaintStatusUpdateRequest;
 import com.akshay.dcrs.dto.response.complaint.ComplaintResponse;
 import com.akshay.dcrs.model.enums.ComplaintStatus;
 import com.akshay.dcrs.model.enums.Priority;
@@ -104,5 +105,85 @@ public class ComplaintService implements IComplaintService {
         }
 
         return Priority.MEDIUM;
+    }
+    @Override
+    public ComplaintResponse updateStatus(String complaintId,
+                                          ComplaintStatusUpdateRequest request) {
+
+        Complaint complaint = complaintRepository.findByComplaintId(complaintId)
+                .orElseThrow(() -> new RuntimeException("Complaint not found"));
+
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        ComplaintStatus previousStatus = complaint.getStatus();
+        ComplaintStatus newStatus = request.getStatus();
+
+        validateTransition(previousStatus, newStatus);
+
+
+        complaint.setStatus(newStatus);
+        complaint.setUpdatedAt(LocalDateTime.now());
+
+        complaintRepository.save(complaint);
+
+
+        AuditLog auditLog = AuditLog.builder()
+                .complaint(complaint)
+                .previousStatus(previousStatus)
+                .newStatus(newStatus)
+                .updatedBy(user)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        auditLogRepository.save(auditLog);
+
+
+        return ComplaintResponse.builder()
+                .complaintId(complaint.getComplaintId())
+                .status(complaint.getStatus())
+                .priority(complaint.getPriority())
+                .slaDeadline(complaint.getSlaDeadline())
+                .department(complaint.getDepartment().getName())
+                .ward(complaint.getWard().getName())
+                .build();
+    }
+    private void validateTransition(ComplaintStatus current,
+                                    ComplaintStatus target) {
+
+        switch (current) {
+
+            case NEW:
+                if (target != ComplaintStatus.ASSIGNED) {
+                    throw new RuntimeException("Invalid transition from NEW");
+                }
+                break;
+
+            case ASSIGNED:
+                if (target != ComplaintStatus.IN_PROGRESS) {
+                    throw new RuntimeException("Invalid transition from ASSIGNED");
+                }
+                break;
+
+            case IN_PROGRESS:
+                if (target != ComplaintStatus.RESOLVED) {
+                    throw new RuntimeException("Invalid transition from IN_PROGRESS");
+                }
+                break;
+
+            case RESOLVED:
+                if (target != ComplaintStatus.CLOSED) {
+                    throw new RuntimeException("Invalid transition from RESOLVED");
+                }
+                break;
+
+            case CLOSED:
+                throw new RuntimeException("Complaint already closed");
+
+            default:
+                throw new RuntimeException("Invalid status transition");
+        }
     }
 }
