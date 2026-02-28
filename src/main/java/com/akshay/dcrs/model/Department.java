@@ -20,4 +20,8 @@ public class Department {
 
     @Column(nullable = false)
     private Integer defaultSlaHours;
+
+    @ManyToOne
+    @JoinColumn(name = "admin_id")
+    private User admin;
 }
